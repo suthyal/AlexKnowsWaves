@@ -24,7 +24,7 @@ website:
 format:
   html:
     theme: none
-    css: styles.scss
+    css: styles.css
     toc: false
     smooth-scroll: true
     html-math-method: mathjax
