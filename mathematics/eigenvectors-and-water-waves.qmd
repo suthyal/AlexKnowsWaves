@@ -1,0 +1,216 @@
+---
+title: ""
+format:
+  html:
+    title-block: false
+---
+
+::: {.project-page}
+
+# 4.2 Eigenvectors and Water Waves
+
+## A short expository note connecting linear algebra, eigenfunctions, and classical water-wave theory
+
+## Overview
+
+This note connects a familiar idea from linear algebra to one of the standard solution methods in water-wave theory. The starting point is the eigenvalue problem for a matrix, where certain vectors are preserved in direction under a linear transformation and only rescaled by a characteristic value. The same structure reappears in differential equations, where the “vectors” become functions and the linear transformation becomes a differential operator. In that setting, the natural analogues of eigenvectors are eigenfunctions.
+
+That viewpoint is useful in wave mechanics because many of the governing equations are linear, and separation of variables reduces them to simpler one-dimensional problems. The resulting factors in space and time are selected by characteristic parameters such as the wavenumber $k$ and angular frequency $\sigma$. In that sense, the classical water-wave solution can be read as an eigenfunction-based construction.
+
+## From eigenvectors to eigenfunctions
+
+For a matrix $A$, a nonzero vector $v$ is an eigenvector if
+
+$$
+Av = \lambda v,
+$$
+
+where $\lambda$ is the associated eigenvalue. This equation identifies directions that are left unchanged by the action of $A$, up to scaling. The usual computational route is to rewrite the problem as
+
+$$
+(A-\lambda I)v = 0,
+$$
+
+and then require a nontrivial solution by imposing
+
+$$
+\det(A-\lambda I)=0.
+$$
+
+The determinant condition produces the characteristic polynomial, whose roots are the eigenvalues.
+
+The same idea extends beyond matrices. More generally, a linear transformation $T$ satisfies
+
+$$
+T(v+w)=T(v)+T(w), \qquad T(cv)=c\,T(v).
+$$
+
+A differential operator is one of the most important examples. If $T=\dfrac{d}{dt}$, then linear differential equations can often be interpreted as eigenvalue problems for $T$ or its powers.
+
+For instance, the undamped mass-spring equation
+
+$$
+m\frac{d^2x}{dt^2}+kx=0
+$$
+
+can be rewritten as
+
+$$
+\frac{d^2x}{dt^2} = -\frac{k}{m}x.
+$$
+
+This has the same form as an eigenvalue problem:
+
+$$
+T^2 x = \lambda x,
+\qquad \lambda = -\frac{k}{m}.
+$$
+
+Here the unknown is no longer a finite-dimensional vector but a function of time. Accordingly, the natural objects are eigenfunctions rather than eigenvectors.
+
+## Why oscillatory functions appear
+
+A central feature of linear wave and vibration problems is that sinusoidal functions reproduce themselves under differentiation, up to a constant factor. This is why they arise so naturally in modal analysis and wave theory.
+
+Using the complex exponential, one may write
+
+$$
+e^{it} = \cos t + i \sin t.
+$$
+
+Differentiation preserves this form:
+
+$$
+\frac{d}{dt}e^{i\omega t} = i\omega e^{i\omega t},
+\qquad
+\frac{d^2}{dt^2}e^{i\omega t} = -\omega^2 e^{i\omega t}.
+$$
+
+So $e^{i\omega t}$ is an eigenfunction of the second-derivative operator, with eigenvalue $-\omega^2$. Its real and imaginary parts, $\cos(\omega t)$ and $\sin(\omega t)$, therefore provide the oscillatory building blocks for many physical systems.
+
+This is the bridge to water waves: once the governing equations are written in linear form, the solution factors are selected precisely because they behave like eigenfunctions under differentiation.
+
+## Separation of variables in the water-wave setting
+
+In the linearized two-dimensional setting, incompressibility may be written as
+
+$$
+\nabla \cdot \mathbf{u} = 0,
+$$
+
+or in components,
+
+$$
+\frac{\partial u}{\partial x} + \frac{\partial w}{\partial z} = 0.
+$$
+
+If the flow is irrotational, one introduces a velocity potential $\phi$ such that the governing equation becomes Laplace’s equation:
+
+$$
+\nabla^2 \phi = 0.
+$$
+
+A standard step is to seek a separated solution of the form
+
+$$
+\phi(x,z,t)=X(x)Z(z)T(t).
+$$
+
+Substituting this into Laplace’s equation and dividing by the product $XZT$ gives a relation in which each term depends on only one variable. The spatial part separates into equations of the form
+
+$$
+\frac{X''(x)}{X(x)} = -\,\frac{Z''(z)}{Z(z)} = -k^2,
+$$
+
+where $k^2$ is the separation constant. This produces the pair of ordinary differential equations
+
+$$
+X'' + k^2 X = 0,
+\qquad
+Z'' - k^2 Z = 0.
+$$
+
+These are exactly the kinds of one-dimensional eigenvalue problems that arise from linear operators. The sign difference matters: it determines whether the resulting eigenfunctions are oscillatory or exponential.
+
+The horizontal equation,
+
+$$
+X'' + k^2 X = 0,
+$$
+
+has oscillatory solutions
+
+$$
+X(x)=A\cos(kx)+B\sin(kx),
+$$
+
+while the vertical equation,
+
+$$
+Z'' - k^2 Z = 0,
+$$
+
+has exponential or hyperbolic solutions
+
+$$
+Z(z)=Ce^{kz}+De^{-kz}.
+$$
+
+In finite depth, these are typically expressed using hyperbolic functions, which fit naturally with the bottom and free-surface boundary conditions.
+
+## The role of $k$ and $\sigma$
+
+The two characteristic quantities that organize the classical water-wave solution are the wavenumber $k$ and the angular frequency $\sigma$. They appear as the eigenvalue-like parameters selected by the separated equations and by the time dependence of the motion.
+
+A standard linear wave potential can be written as
+
+$$
+\phi(x,z,t)
+=
+\frac{H}{2}\frac{g}{\sigma}
+\frac{\cosh(k(h+z))}{\cosh(kh)}
+\sin(kx-\sigma t).
+$$
+
+This formula already reveals the separated structure:
+- the horizontal dependence is oscillatory through $kx$,
+- the vertical dependence is carried by the hyperbolic factor,
+- the time dependence is oscillatory through $\sigma t$.
+
+Using the identity
+
+$$
+\sin(\alpha-\beta)=\sin(\alpha)\cos(\beta)-\cos(\alpha)\sin(\beta),
+$$
+
+the potential may be expanded as
+
+$$
+\phi(x,z,t)
+=
+\frac{H}{2}\frac{g}{\sigma}
+\frac{\cosh(k(h+z))}{\cosh(kh)}
+\Bigl[\sin(kx)\cos(\sigma t)-\cos(kx)\sin(\sigma t)\Bigr].
+$$
+
+This makes the separation especially transparent: the solution is built from products of the form
+
+$$
+Z(z)\,X(x)\,T(t),
+$$
+
+which is precisely the structure expected from separation of variables. Each factor is selected because it is compatible with the corresponding linear operator.
+
+## Why the eigenvalue viewpoint is useful
+
+The advantage of this perspective is not just computational. It gives a clean conceptual interpretation of why the classical wave forms look the way they do.
+
+In linear algebra, eigenvectors are the directions naturally singled out by a transformation. In differential equations, eigenfunctions are the shapes naturally singled out by a differential operator. For water waves, the sinusoidal horizontal structure, the hyperbolic vertical structure, and the harmonic time dependence are not arbitrary guesses. They arise because the governing linear operators preserve those functional forms up to scaling by characteristic parameters.
+
+This is one of the main mathematical reasons that separation of variables is so powerful in classical wave theory: it converts a multivariable PDE into a family of simpler eigenvalue problems whose solutions already reflect the physical geometry of oscillation and decay.
+
+## Closing note
+
+This short page is adapted from a longer expository note. The goal here is to highlight the central idea: the passage from eigenvectors of matrices to eigenfunctions of differential operators provides a natural conceptual bridge into separation of variables and linear water-wave theory. In that framework, quantities such as $k$ and $\sigma$ are not merely constants in a formula. They are the characteristic values that organize the structure of the solution.
+
+:::

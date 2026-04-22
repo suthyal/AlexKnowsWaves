@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.35">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>constructing-a-polynomial-surrogate-for-wec-array-power – Alex Sutherland</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<link href="../assets/icons/siteLogo.png" rel="icon" type="image/png">
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-html/tabby.min.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-html-640605f58ae58ee79329c070719e555b.min.css" rel="stylesheet" append-hash="true" data-mode="light">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-46f66b053e56abd73bb6e954d61a315b.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<style>html{ scroll-behavior: smooth; }</style>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../styles.scss">
+</head>
+
+<body>
+
+
+
+
+
+<section id="constructing-a-polynomial-surrogate-for-wec-array-pto-power" class="project-page">
+<h1>2.2 Constructing a Polynomial Surrogate for WEC Array PTO Power</h1>
+<h2 id="a-reduced-order-modeling-workflow-for-predicting-pto-response-and-interpreting-sensitivity" class="anchored">A reduced-order modeling workflow for predicting PTO response and interpreting sensitivity</h2>
+<div>
+<blockquote>
+<p><strong>Full report</strong></p>
+<p>This page is adapted from the full surrogate-modeling report, available <a href="../assets/pdfs/wec-array-final-solo-report.pdf">here</a>.</p>
+</blockquote>
+</div>
+<h2 id="overview" class="anchored">Overview</h2>
+<p>This project focused on replacing a large physics-based simulation database with a reduced-order surrogate model for PTO total power in a two-device wave energy converter array. The goal was not only to predict power output efficiently, but also to understand how that response changes with wave height, peak period, spacing, and direction.</p>
+<p>The report approached that problem in two stages. First, a structured simulation database was built from a WAMIT-based hydrodynamic workflow. Second, that database was used to fit and reduce a polynomial surrogate for PTO total power. The final result was a compact model that preserved the main predictive structure of the simulation-derived response surface while remaining much cheaper to evaluate than the full hydrodynamic workflow. In the full report, that surrogate was then used to interpret PTO total power, array-level capture width, contribution fraction, and derivative-based sensitivity structure over the <span class="math inline">\((H_s,T_p)\)</span> domain.</p>
+<h2 id="why-a-surrogate-was-needed" class="anchored">Why a surrogate was needed</h2>
+<p>A full simulation campaign can map the response of the array over spacing and wave conditions, but it is too expensive to rerun every time a new sea state or interpretation question arises. That is the main motivation for the surrogate: execute the expensive physics-based workflow once, then fit a model that can be evaluated rapidly afterward.</p>
+<p>The report states this directly. Rather than rerunning the hydrodynamic pipeline for each new sea state, a representative database was generated first and then used to construct a reduced-order predictive model. In that sense, the surrogate is not separate from the simulation work; it is a computational layer built on top of it.</p>
+<h2 id="inputs-and-target-quantity" class="anchored">Inputs and target quantity</h2>
+<p>The surrogate was built to predict mean PTO absorbed power as a function of spacing and environmental variables. In the report, the predictor map is written as</p>
+<p><span class="math display">\[
+P_{\mathrm{PTO}} = f(S, H_s, T_p, \mathrm{Dir}),
+\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\(S\)</span> is device spacing,</li>
+<li><span class="math inline">\(H_s\)</span> is significant wave height,</li>
+<li><span class="math inline">\(T_p\)</span> is peak wave period,</li>
+<li>and <span class="math inline">\(\mathrm{Dir}\)</span> is mean wave direction.</li>
+</ul>
+<p>The target quantity itself was defined through the PTO damping model. For a linear PTO representation, the report gives the absorbed-power relation as</p>
+<p><span class="math display">\[
+P_{\mathrm{PTO}} = \frac{1}{2} B_{\mathrm{PTO}} \lvert \dot{x} \rvert^2,
+\]</span></p>
+<p>where <span class="math inline">\(B_{\mathrm{PTO}}\)</span> is the PTO damping coefficient and <span class="math inline">\(\dot{x}\)</span> is the device velocity response. That response is not inserted by hand; it comes from the frequency-domain equation of motion used in the upstream hydrodynamic workflow. This matters because it means the surrogate is trained directly on simulation-derived PTO power values rather than on an abstract proxy.</p>
+<h2 id="standardization-and-feature-construction" class="anchored">Standardization and feature construction</h2>
+<p>Before fitting the regression model, the inputs were standardized. The report writes the standardization in the usual form</p>
+<p><span class="math display">\[
+z = \frac{x-\mu}{\sigma},
+\]</span></p>
+<p>where <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\sigma\)</span> are the mean and standard deviation of each predictor computed from the training data.</p>
+<p>Direction was handled with a trigonometric encoding rather than as a raw angle. The input vector used for feature construction was</p>
+<p><span class="math display">\[
+x =
+\begin{bmatrix}
+S &amp; H_s &amp; T_p &amp; \cos(\mathrm{Dir}) &amp; \sin(\mathrm{Dir})
+\end{bmatrix},
+\]</span></p>
+<p>which preserves angular periodicity. A third-order polynomial library was then built from the standardized variables, including all monomials up to total degree three and the associated interaction terms. In the report, the surrogate is written as</p>
+<p><span class="math display">\[
+P_{\mathrm{PTO}} = \sum_{i=1}^{N_{\mathrm{terms}}} \beta_i \Phi_i(z),
+\]</span></p>
+<p>where <span class="math inline">\(\Phi_i(z)\)</span> are the polynomial basis functions and <span class="math inline">\(\beta_i\)</span> are the fitted coefficients.</p>
+<h2 id="regularization-and-model-reduction" class="anchored">Regularization and model reduction</h2>
+<p>Because the full third-order polynomial library contains many overlapping and correlated terms, the report fit the model using ridge regression. The optimization problem was written as</p>
+<p><span class="math display">\[
+\hat{\beta}
+=
+\arg\min_{\beta}
+\left(
+\lVert y-\Phi\beta\rVert^2 + \lambda \lVert \beta \rVert^2
+\right),
+\]</span></p>
+<p>where <span class="math inline">\(y\)</span> is the vector of PTO power values and <span class="math inline">\(\Phi\)</span> is the feature matrix. The purpose of the regularization term was to control coefficient magnitude, reduce variance, and stabilize the fit in the presence of multicollinearity.</p>
+<p>After fitting the full third-order model, a backward-elimination procedure was used to reduce the library. This is one of the strongest parts of the workflow: the report does not stop at fitting a large polynomial basis, but deliberately trims the model down to retain only the terms that materially affect predictive performance. The final reduced surrogate retained <strong>12 terms</strong> from the original <strong>56-term</strong> third-order polynomial library, with selected ridge parameter <span class="math inline">\(\lambda = 10\)</span>.</p>
+<h2 id="validation-and-acceptance-of-the-reduced-model" class="anchored">Validation and acceptance of the reduced model</h2>
+<p>The reduced model was evaluated against an independent validation dataset and compared directly with the full polynomial model. The report describes Figure 4 as a parity-style comparison between true simulated PTO power and model-predicted PTO power for both the full and reduced models. The main point of that figure is that the reduced model preserves the predictive behavior of the full model even after most of the terms are removed.</p>
+<!-- Full report Figure 4: Comparison between the full polynomial model and the reduced surrogate model -->
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img src="../assets/images/constructing-a-polynomial-surrogate-for-wec-array-power/ModelValidationComparison.svg" class="img-fluid"></p>
+<figcaption>Validation comparison between the full polynomial model and the reduced surrogate model.</figcaption>
+</figure>
+</div>
+<p>The final reduced surrogate was fit on a stratified sampled table containing <strong>444,780 rows</strong> drawn from the North Sea, PWS, and Deep Water NDBC datasets. On the validation set, it achieved</p>
+<p><span class="math display">\[
+\mathrm{RMSE}_{\mathrm{val}} = 4.01,
+\qquad
+R^2_{\mathrm{val}} = 0.927.
+\]</span></p>
+<p>Those values are strong evidence that the reduced model still captures the dominant structure of the simulation-derived PTO response surface.</p>
+<h2 id="the-final-reduced-model" class="anchored">The final reduced model</h2>
+<p>For reproducibility, the report presents the final surrogate in standardized-input form. The retained basis contains 12 terms and is expressed in the standardized variables associated with</p>
+<p><span class="math display">\[
+x =
+\begin{bmatrix}
+H_{s,\mathrm{model}} &amp;
+T_{p,\mathrm{model}} &amp;
+S &amp;
+\sin\beta &amp;
+\cos\beta
+\end{bmatrix}^{T}.
+\]</span></p>
+<p>The retained polynomial structure includes linear, quadratic, and mixed terms, with especially strong dependence on <span class="math inline">\(H_s\)</span>, <span class="math inline">\(T_p\)</span>, and their interactions. The report emphasizes that the standardized-input representation is the canonical computational form used in fitting and evaluation, while a dimensional-input version can be derived for interpretation and reporting.</p>
+<h2 id="what-the-surrogate-reveals-about-pto-power" class="anchored">What the surrogate reveals about PTO power</h2>
+<p>The reduced model was not used only as a fast predictor. It was also used as an interpretation tool over the <span class="math inline">\((H_s,T_p)\)</span> domain. In the results section, the report shows surrogate-predicted response surfaces for PTO capture width, PTO total power, and contribution fraction under both the NDBC and North Sea datasets.</p>
+<p>The response surfaces in the full report include both PTO total power and PTO capture width for the <strong>two-device array</strong>. That distinction matters for interpretation: the reported capture-width quantity is an array-level measure for both WECs together, not a per-device capture width. For a rough single-WEC interpretation at this spacing, the plotted array-level capture width would therefore be divided by two.</p>
+<p>A particularly useful figure for the website is the total-power surface. It shows that absolute PTO power grows strongly with wave height and has structured dependence on peak period, including a high-response band around the preferred response region. The report emphasizes that the conditions of highest normalized performance are not identical to those of highest absolute PTO power, which is exactly the kind of distinction the surrogate makes easy to visualize.</p>
+<!-- Full report Figure 6: Surrogate-predicted PTO total power over the NDBC domain -->
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img src="../assets/images/constructing-a-polynomial-surrogate-for-wec-array-power/PTOPowerSurface.svg" class="img-fluid"></p>
+<figcaption>Surrogate-predicted PTO total power over the deep-water design domain.</figcaption>
+</figure>
+</div>
+<h2 id="sensitivity-as-an-interpretation-tool" class="anchored">Sensitivity as an interpretation tool</h2>
+<p>One of the strongest aspects of this work is that the surrogate was analyzed with exact derivatives rather than being treated as a black-box regression model. The report defines a span-scaled total sensitivity measure as</p>
+<p><span class="math display">\[
+S_{\mathrm{tot}} =
+\sqrt{
+\left(
+\left|
+\frac{\partial P_{\mathrm{PTO}}}{\partial H_s}
+\right|
+\Delta H_s
+\right)^2
++
+\left(
+\left|
+\frac{\partial P_{\mathrm{PTO}}}{\partial T_p}
+\right|
+\Delta T_p
+\right)^2
++
+\left(
+\left|
+\frac{\partial P_{\mathrm{PTO}}}{\partial S}
+\right|
+\Delta S
+\right)^2
++
+\left(
+\left|
+\frac{\partial P_{\mathrm{PTO}}}{\partial \beta}
+\right|
+\Delta \beta
+\right)^2
+}.
+\]</span></p>
+<p>This puts derivative contributions with different physical units on a comparable footing before combining them into one total sensitivity magnitude.</p>
+<p>The resulting sensitivity maps show that the response surface is most sensitive in the <strong>high-<span class="math inline">\(H_s\)</span>, low-<span class="math inline">\(T_p\)</span></strong> portion of the domain. The report also shows that the variable-level balance changes across the domain: some regions are more strongly controlled by wave height, while others are more strongly controlled by peak period.</p>
+<!-- Full report Figure 11: Normalized total sensitivity magnitude -->
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img src="../assets/images/constructing-a-polynomial-surrogate-for-wec-array-power/TotalSensitivity.svg" class="img-fluid"></p>
+<figcaption>Normalized total sensitivity magnitude of the final reduced PTO power surrogate.</figcaption>
+</figure>
+</div>
+<h2 id="which-terms-actually-matter" class="anchored">Which terms actually matter</h2>
+<p>The report goes one step further and summarizes sensitivity at the level of individual retained polynomial terms. This is valuable because coefficient magnitude alone does not tell the whole story: some terms can have large coefficients but low derivative-based influence, while others contribute strongly to the response variation over the plotted domain.</p>
+<p>The full term-level summary reported in the study is reproduced below. It shows that the dominant contributions come from the <strong><span class="math inline">\(H_s\)</span>-driven terms</strong>, especially the linear <span class="math inline">\(H_s\)</span> term, the quadratic <span class="math inline">\(H_s^2\)</span> term, and the mixed term <span class="math inline">\(H_s^2 T_p\)</span>.</p>
+<table class="caption-top">
+<colgroup>
+<col style="width: 21%">
+<col style="width: 15%">
+<col style="width: 21%">
+<col style="width: 21%">
+<col style="width: 21%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Term</th>
+<th>Term label</th>
+<th style="text-align: right;">|β|</th>
+<th style="text-align: right;">Mean term total sensitivity</th>
+<th style="text-align: right;">Normalized term sensitivity</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td><span class="math inline">\(1\)</span></td>
+<td style="text-align: right;">11.170</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td><span class="math inline">\(T_p\)</span></td>
+<td style="text-align: right;">4.974</td>
+<td style="text-align: right;">14.654</td>
+<td style="text-align: right;">0.054</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td><span class="math inline">\(H_s\)</span></td>
+<td style="text-align: right;">12.668</td>
+<td style="text-align: right;">67.914</td>
+<td style="text-align: right;">0.248</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td><span class="math inline">\(T_p \cos\beta\)</span></td>
+<td style="text-align: right;">2.066</td>
+<td style="text-align: right;">15.698</td>
+<td style="text-align: right;">0.057</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td><span class="math inline">\(T_p \sin\beta\)</span></td>
+<td style="text-align: right;">2.036</td>
+<td style="text-align: right;">6.851</td>
+<td style="text-align: right;">0.025</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">6</td>
+<td><span class="math inline">\(T_p^2\)</span></td>
+<td style="text-align: right;">2.061</td>
+<td style="text-align: right;">9.964</td>
+<td style="text-align: right;">0.036</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td><span class="math inline">\(H_s T_p\)</span></td>
+<td style="text-align: right;">3.449</td>
+<td style="text-align: right;">24.829</td>
+<td style="text-align: right;">0.091</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">8</td>
+<td><span class="math inline">\(H_s^2\)</span></td>
+<td style="text-align: right;">3.801</td>
+<td style="text-align: right;">66.992</td>
+<td style="text-align: right;">0.245</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">9</td>
+<td><span class="math inline">\(T_p \sin\beta \cos\beta\)</span></td>
+<td style="text-align: right;">1.107</td>
+<td style="text-align: right;">9.609</td>
+<td style="text-align: right;">0.035</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">10</td>
+<td><span class="math inline">\(T_p^3\)</span></td>
+<td style="text-align: right;">0.857</td>
+<td style="text-align: right;">7.324</td>
+<td style="text-align: right;">0.027</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">11</td>
+<td><span class="math inline">\(H_s T_p^2\)</span></td>
+<td style="text-align: right;">1.367</td>
+<td style="text-align: right;">13.909</td>
+<td style="text-align: right;">0.051</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">12</td>
+<td><span class="math inline">\(H_s^2 T_p\)</span></td>
+<td style="text-align: right;">1.795</td>
+<td style="text-align: right;">36.008</td>
+<td style="text-align: right;">0.131</td>
+</tr>
+</tbody>
+</table>
+<p>This table makes the structure of the surrogate much easier to interpret. The derivative-based influence is concentrated primarily in the height-driven terms, which is consistent with the sensitivity maps showing the strongest response in the high-<span class="math inline">\(H_s\)</span>, low-<span class="math inline">\(T_p\)</span> region of the domain.</p>
+<h2 id="why-this-matters" class="anchored">Why this matters</h2>
+<p>The main value of this surrogate is not only speed. It is that it preserves a useful connection between high-fidelity simulation and interpretable reduced-order structure.</p>
+<p>The workflow starts with a large hydrodynamic simulation database, compresses that database into a reduced 12-term polynomial model, validates that reduction against held-out data, and then extracts derivative-based sensitivity information from the final fit. That makes the model useful in two ways at once:</p>
+<ul>
+<li>as a fast predictor of PTO response,</li>
+<li>and as a compact analytical description of how that response varies across the sea-state domain.</li>
+</ul>
+<p>In that sense, the surrogate is not just a machine-learning shortcut. It is a structured mathematical model built from simulation data and then used to interpret the response surface itself.</p>
+<h2 id="closing-note" class="anchored">Closing note</h2>
+<p>This project represents the data-analysis layer of the broader WEC-array workflow. The upstream hydrodynamic simulations provide the response database, and the surrogate turns that database into a reduced-order predictive and interpretive model.</p>
+<p>For the website, that makes it a particularly strong example of scientific computing: it combines simulation, regression, model reduction, validation, and sensitivity analysis in one coherent pipeline. The result is a model that is both computationally efficient and physically interpretable.</p>
+</section>
+
+
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+    tabsets.forEach(function(tabset) {
+      const tabby = new Tabby('#' + tabset.id);
+    });
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'light-border',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+
+
+
+
+<script src="../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

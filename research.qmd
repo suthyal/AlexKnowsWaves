@@ -1,0 +1,56 @@
+---
+title: ""
+format:
+  html:
+    title-block: false
+---
+
+::: {.section-page}
+
+# Research
+
+This section presents broader research themes and the scientific context tying the work together.
+
+<div class="project-list">
+
+<div class="project-item">
+<a class="project-link" href="research/pacwave-nonlinear-wave-propagation.qmd">
+<div class="project-number">1.1</div>
+<div class="project-text">
+<div class="project-title">Nonlinear Wave Propagation and Structural Response Analysis for PacWave South</div>
+<div class="project-tags">
+<span class="project-tag">time series analysis</span>
+<span class="project-tag">dynamics simulation</span>
+<span class="project-tag">wave energy</span>
+<span class="project-tag">nonlinear modeling</span>
+<span class="project-tag">ocean engineering</span>
+<span class="project-tag">statistical characterization</span>
+</div>
+</div>
+</a>
+</div>
+
+<div class="project-divider"></div>
+
+<div class="project-item">
+<a class="project-link" href="research/pacwave-mooring-load-prediction.qmd">
+<div class="project-number">1.2</div>
+<div class="project-text">
+<div class="project-title">Mooring Line Load Prediction and Anchor Sensitivity for PacWave South</div>
+<div class="project-tags">
+<span class="project-tag">mooring dynamics</span>
+<span class="project-tag">extreme value analysis</span>
+<span class="project-tag">fatigue screening</span>
+<span class="project-tag">numerical simulation</span>
+<span class="project-tag">ocean engineering</span>
+<span class="project-tag">model validation</span>
+</div>
+</div>
+</a>
+</div>
+
+<div class="project-divider"></div>
+
+</div>
+
+:::

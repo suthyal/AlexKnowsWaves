@@ -1,0 +1,31 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "Alex Sutherland"
+  favicon: assets/icons/siteLogo.png
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: research.qmd
+        text: Research
+      - href: data-analysis.qmd
+        text: Data Analysis
+      - href: physics-based-simulation.qmd
+        text: Physics-Based Simulation
+      - href: mathematics.qmd
+        text: Mathematics
+      - href: about.qmd
+        text: About
+
+format:
+  html:
+    theme: none
+    css: styles.scss
+    toc: false
+    smooth-scroll: true
+    html-math-method: mathjax
+
+editor: visual

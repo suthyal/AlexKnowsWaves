@@ -1,0 +1,26 @@
+---
+title: ""
+format:
+  html:
+    title-block: false
+---
+
+::: {.project-page}
+
+# About
+
+![Getting ready to perform an experiment in the O.H. Hinsdale Large Wave Basin.](assets/images/about/ThatsMe.JPG){fig-alt="Alex Sutherland in the experimental wave basin at Oregon State University." width="85%"}
+
+I am an applied mathematician and engineer interested in how mathematical models, physical experiments, and data analysis can be combined to understand complex systems. Most of my recent work has focused on wave energy conversion, where hydrodynamics, structural response, environmental forcing, and statistical variability all interact in ways that make prediction both challenging and interesting. What I enjoy most about this kind of work is that it requires moving across different ways of thinking: building simulations, interpreting measurements, developing reduced-order models, and using mathematics to make the underlying structure of a problem clearer.
+
+I am currently pursuing a PhD in Ocean & Coastal Engineering at Oregon State University, where I also completed an MSc in Mathematics. That combination reflects the way I like to work. I am drawn to problems that are physically grounded but mathematically rich, especially when they involve fluid-structure interaction, wave dynamics, structural mechanics, or reduced-order modeling. My background includes linear and nonlinear wave analysis, experimental testing, time-series analysis, numerical simulation, and mathematical topics such as linear algebra, inverse problems, numerical methods, and complex analysis.
+
+In my research, I have worked on multiple aspects of wave energy systems. One major thread has been building hydrodynamic-to-power modeling pipelines for wave energy converter arrays using tools such as WAMIT and WEC-Sim, then using those simulations to study how spacing, direction, and sea-state conditions affect performance. Another has involved processing and analyzing long time-series datasets from the North Sea and studying how nonlinear wave propagation changes statistics such as skewness, kurtosis, and extreme-event probability. I have also worked on experimental studies of floating wave energy devices, including motion-capture analysis, data-processing pipelines, and structural-response interpretation from wave-basin tests. Across these projects, I have tried to keep one goal in view: building workflows that are technically sound, reproducible, and useful for interpretation and design.
+
+A big part of how I work is through scientific computing. I use MATLAB and Python heavily, along with Bash, Linux, Git, and HPC systems, and I am comfortable working across simulation, data processing, and visualization pipelines. I enjoy taking a large, messy problem, organizing it into a clean computational workflow, and then extracting something physically meaningful from the result. That might mean generating large parametric simulation datasets, fitting surrogate models, validating models against experiments, or producing figures and summaries that make a complex result understandable to other people.
+
+More personally, I am especially motivated by problems where theory and application really have to meet. I like work that is technical and rigorous, but I also like when it connects back to something tangible: a device in the lab, a physical system in the ocean, a structural response under loading, or a mathematical idea that clarifies why a model behaves the way it does. That is part of what has drawn me both to wave energy research and to applied mathematics more broadly. I am interested in building tools and models that are not just accurate, but interpretable — models that help explain as well as predict.
+
+I currently serve as a Graduate Research Assistant at Oregon State University, where I support DOE-funded research in wave energy modeling, simulation, and analysis. I have also contributed to structural-dynamics research through an internship at Sandia National Laboratories, where the work involved simulation and analysis of complex structural systems under demanding loading environments. Together, these experiences have strengthened my interest in computational mechanics, simulation-based engineering, and the broader challenge of using mathematics and computation to understand real physical systems.
+
+:::

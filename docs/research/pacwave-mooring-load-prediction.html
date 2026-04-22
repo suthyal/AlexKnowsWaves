@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.35">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>pacwave-mooring-load-prediction – Alex Sutherland</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<link href="../assets/icons/siteLogo.png" rel="icon" type="image/png">
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-html/tabby.min.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-html-640605f58ae58ee79329c070719e555b.min.css" rel="stylesheet" append-hash="true" data-mode="light">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-46f66b053e56abd73bb6e954d61a315b.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<style>html{ scroll-behavior: smooth; }</style>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../styles.scss">
+</head>
+
+<body>
+
+
+
+
+
+<section id="mooring-line-load-prediction-and-anchor-sensitivity-for-pacwave-south" class="project-page">
+<h1>1.2 Mooring Line Load Prediction and Anchor Sensitivity for PacWave South</h1>
+<div>
+<blockquote>
+<p><strong>Full report</strong></p>
+<p>This page is adapted from the full Task 3 research report, available <a href="../assets/pdfs/pacwave-task3-report.pdf">here</a>.</p>
+</blockquote>
+</div>
+<h2 id="overview" class="anchored">Overview</h2>
+<p>This project focused on predicting long-term mooring loads for a PacWave South deployment using coupled time-domain simulation and statistical postprocessing. The core workflow combined WEC-Sim body dynamics with MoorDyn mooring dynamics, then reduced the resulting tension histories into two engineering outputs: extreme-load return levels and fatigue-governing sea states.</p>
+<p>Rather than treating mooring analysis as a purely geometric or static problem, the study used representative irregular sea states, retained dynamic tension histories for each mooring leg, and then screened those histories in two complementary ways. Extreme loads were estimated through a weighted peaks-over-threshold framework, while fatigue-relevant loading was mapped over sea-state space using rainflow-based proxy metrics. The result was a compact design-oriented picture of which mooring legs and which sea states matter most.</p>
+<!-- Full report Figure 2: Ocean Sentinel Proposed Mooring Line Configuration -->
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img src="../assets/images/pacwave-mooring-load-prediction/OceanSentinelMooringConfiguration.svg" class="img-fluid"></p>
+<figcaption>Proposed Ocean Sentinel mooring configuration for the PacWave South study.</figcaption>
+</figure>
+</div>
+<h2 id="why-this-problem-matters" class="anchored">Why this problem matters</h2>
+<p>For a wave-energy deployment, the mooring system is part of the device, not just a boundary condition. Extreme tensions affect survivability, while repeated load cycling controls long-term fatigue demand. A useful mooring study therefore has to do more than simulate a few representative cases: it has to connect the long-term sea-state climate to a manageable set of design-relevant load measures.</p>
+<p>That is the motivation for this page. The report’s contribution is not just a set of simulations, but a way to translate many weighted sea states into a small number of governing tensions and governing conditions for follow-on design checks.</p>
+<h2 id="mooring-model-and-simulation-context" class="anchored">Mooring model and simulation context</h2>
+<p>The baseline mooring model used a lumped-mass mooring line method, in which each line is represented as discrete masses connected by elastic-damped segments. In the report, the dynamic equilibrium of each lumped mass is written as</p>
+<p><span class="math display">\[
+m_i \ddot{r}_i = T_{i+1} - T_i + F_{\mathrm{ext},i}.
+\]</span></p>
+<p>This is the modeling step that converts the continuous cable problem into a tractable time-domain system while still retaining large displacement effects, nonlinear geometry, and transient load behavior. The report emphasizes that this approach is widely used for floating offshore platforms, floating wind, and wave-energy systems because it balances physical fidelity with computational practicality.</p>
+<p>The numerical study then coupled WEC-Sim with MoorDyn for a five-leg system comprising North, East, Southeast, Southwest, and West mooring legs. The representative sea-state set was simulated at fixed time step, and a 180 s initial transient was removed before load analysis.</p>
+<h2 id="validation-and-real-device-context" class="anchored">Validation and real-device context</h2>
+<p>Before moving to the PacWave mooring study, the broader simulation workflow was validated using the Laboratory Upgrade Point Absorber (LUPA), an experimentally tested wave-energy converter. The report explains that LUPA was used because the Ocean Sentinel deployment had been delayed, so a recent open-source experimental platform was needed for validation. It also notes that the LUPA validation included RAO comparison work in WAMIT and WEC-Sim.</p>
+<!-- Full report Figure 4: LUPA Simulation and laboratory RAO -->
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img src="../assets/images/pacwave-mooring-load-prediction/LUPA_RAO_Validation.png" class="img-fluid"></p>
+<figcaption>Representative RAO comparison used in the LUPA validation workflow.</figcaption>
+</figure>
+</div>
+<p>A compact version of the lab-to-full-scale parameter comparison is useful here because it shows the research sits in the context of a physically realized WEC platform rather than a purely abstract numerical model. The values below are adapted from Table 2 in the report.</p>
+<h3 id="lupa-scale-comparison" class="anchored">LUPA scale comparison</h3>
+<div style="display: flex; justify-content: center; margin: 2rem 0;">
+<div style="text-align: center;">
+<div style="font-size: 1rem; margin-bottom: 0.75rem;">
+<pre><code>Comparison of physical parameters between laboratory scale and full scale.</code></pre>
+</div>
+<table style="
+    border-collapse: collapse;
+    margin: 0 auto;
+    font-size: 0.98rem;
+    line-height: 1.35;
+    min-width: 760px;
+  ">
+<thead>
+<tr style="border-top: 2px solid #222; border-bottom: 1px solid #222;">
+<th colspan="3" style="padding: 0.55rem 1rem; font-weight: 700; text-align: center;">
+Lab Scale
+</th>
+<th colspan="3" style="padding: 0.55rem 1rem; font-weight: 700; text-align: center;">
+Full Scale
+</th>
+</tr>
+<tr style="border-bottom: 1px solid #222;">
+<th style="padding: 0.55rem 1rem; font-weight: 700; text-align: left;">
+Parameter
+</th>
+<th style="padding: 0.55rem 1rem; font-weight: 700; text-align: right;">
+Value
+</th>
+<th style="padding: 0.55rem 1rem; font-weight: 700; text-align: left;">
+Units
+</th>
+<th style="padding: 0.55rem 1rem; font-weight: 700; text-align: left;">
+Parameter
+</th>
+<th style="padding: 0.55rem 1rem; font-weight: 700; text-align: right;">
+Value
+</th>
+<th style="padding: 0.55rem 1rem; font-weight: 700; text-align: left;">
+Units
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+Float mass
+</td>
+<td style="padding: 0.45rem 1rem; text-align: right;">
+248.7
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+kg
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+Float mass
+</td>
+<td style="padding: 0.45rem 1rem; text-align: right;">
+1,989,760.0
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+kg
+</td>
+</tr>
+<tr>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+Float diameter
+</td>
+<td style="padding: 0.45rem 1rem; text-align: right;">
+1.0
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+m
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+Float diameter
+</td>
+<td style="padding: 0.45rem 1rem; text-align: right;">
+20.0
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+m
+</td>
+</tr>
+<tr>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+Float draft
+</td>
+<td style="padding: 0.45rem 1rem; text-align: right;">
+0.4
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+m
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+Float draft
+</td>
+<td style="padding: 0.45rem 1rem; text-align: right;">
+8.8
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+m
+</td>
+</tr>
+<tr>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+Spar mass
+</td>
+<td style="padding: 0.45rem 1rem; text-align: right;">
+175.5
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+kg
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+Spar mass
+</td>
+<td style="padding: 0.45rem 1rem; text-align: right;">
+1,404,320.0
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+kg
+</td>
+</tr>
+<tr>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+Spar heave plate diameter
+</td>
+<td style="padding: 0.45rem 1rem; text-align: right;">
+0.9
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+m
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+Spar heave plate diameter
+</td>
+<td style="padding: 0.45rem 1rem; text-align: right;">
+18.0
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+m
+</td>
+</tr>
+<tr>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+Spar total height
+</td>
+<td style="padding: 0.45rem 1rem; text-align: right;">
+3.7
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+m
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+Spar total height
+</td>
+<td style="padding: 0.45rem 1rem; text-align: right;">
+74.0
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+m
+</td>
+</tr>
+<tr style="border-bottom: 2px solid #222;">
+<td style="padding: 0.45rem 1rem; text-align: left;">
+Spar draft
+</td>
+<td style="padding: 0.45rem 1rem; text-align: right;">
+2.1
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+m
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+Spar draft
+</td>
+<td style="padding: 0.45rem 1rem; text-align: right;">
+41.0
+</td>
+<td style="padding: 0.45rem 1rem; text-align: left;">
+m
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h2 id="conservative-leg-level-load-definition" class="anchored">Conservative leg-level load definition</h2>
+<p>For each simulation, MoorDyn recorded fairlead and anchor tensions on the relevant mooring segments. To produce a conservative per-leg signal suitable for screening, the report defined leg tension as</p>
+<p><span class="math display">\[
+T(t) = \max\!\left(T_{\mathrm{fair}}(t),\; T_{\mathrm{anch}}(t)\right).
+\]</span></p>
+<p>This is an important modeling choice because it lets the later extreme-value and fatigue analysis operate on one leg-level time history instead of treating fairlead and anchor channels separately. It is also one of the cleanest examples of the report’s overall design philosophy: simplify only after the dynamic simulation has already captured the relevant physics.</p>
+<h2 id="extreme-load-prediction" class="anchored">Extreme load prediction</h2>
+<p>The report used a weighted peaks-over-threshold framework to estimate long-term extreme tensions. For each sea state, exceedances above a high threshold were modeled with a Generalized Pareto Distribution, and then the sea-state-specific tails were combined using long-term occurrence weights.</p>
+<p>The weighted annual exceedance-rate curve was written as</p>
+<p><span class="math display">\[
+\Lambda(T)
+=
+\sum_i \lambda_i \,
+\Pr\!\left(Y_i &gt; T-u_i \mid Y_i &gt; 0\right),
+\]</span></p>
+<p>and the return levels were defined implicitly by</p>
+<p><span class="math display">\[
+\Lambda(T_R) = \frac{1}{R},
+\qquad
+R \in \{1,10,50\}\ \text{years}.
+\]</span></p>
+<p>These equations matter because they are what connect short simulated records to engineering-scale design quantities like 10-year and 50-year return tensions. The report interprets smaller values of <span class="math inline">\(\Lambda(T)\)</span> as rarer, more extreme loads, and uses the resulting intersections to identify design-relevant tensions by leg.</p>
+<!-- Full report Figure 10: Weighted annual exceedance-rate curve for the East mooring leg -->
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img src="../assets/images/pacwave-mooring-load-prediction/EastLeg_ExceedanceRateCurve.svg" class="img-fluid"></p>
+<figcaption>Weighted annual exceedance-rate curve for the East mooring leg.</figcaption>
+</figure>
+</div>
+<p>Among the legs with internally consistent scaling, the East leg governed the extreme response. The report lists return levels of <span class="math inline">\(T_1 = 4.8419\)</span> MN, <span class="math inline">\(T_{10} = 10.1681\)</span> MN, and <span class="math inline">\(T_{50} = 17.0576\)</span> MN for that leg, while also flagging the West-leg result as likely nonphysical because it was identical across return periods and orders of magnitude larger than the others.</p>
+<h2 id="fatigue-screening-and-sea-state-concentration" class="anchored">Fatigue screening and sea-state concentration</h2>
+<p>The second major output of the study was fatigue screening. For each sea state and leg, rainflow counting was applied to the conservative tension signal, and annualized contribution metrics were formed from the range moments and the long-term sea-state weights. The report defines the moment-based proxy by</p>
+<p><span class="math display">\[
+M_i(m) = \sum_j n_j (\Delta T_j)^m,
+\]</span></p>
+<p>and then ranks sea states by their weighted annualized contribution</p>
+<p><span class="math display">\[
+C_i(m)
+=
+w_i
+\left(\frac{T_{\mathrm{yr}}}{T_{\mathrm{sim},i}}\right)
+M_i(m).
+\]</span></p>
+<p>This turns a large representative sea-state set into something interpretable: a ranked map of which conditions actually dominate the annualized fatigue proxy.</p>
+<!-- Full report Figure 12: Fatigue sea-state contribution map for the SE mooring leg -->
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img src="../assets/images/pacwave-mooring-load-prediction/SELeg_FatigueContributionMap.svg" class="img-fluid"></p>
+<figcaption>Representative fatigue sea-state contribution map for the SE mooring leg.</figcaption>
+</figure>
+</div>
+<p>One of the clearest results in the report is that fatigue contribution is highly concentrated. Across all legs, the sea state <span class="math inline">\((H_s,T_p)=(2.10, 7.52)\)</span> dominates the annualized fatigue-proxy contribution, accounting for roughly 63–78% of the total depending on leg. The report also shows that only 2–3 unique sea states are needed to reach 80% cumulative contribution for every leg, and that this ranking is essentially unchanged between the <span class="math inline">\(m=3\)</span> and <span class="math inline">\(m=5\)</span> fatigue exponents.</p>
+<h2 id="what-this-changed-in-the-design-picture" class="anchored">What this changed in the design picture</h2>
+<p>The value of the study is not only that it produced return levels and rankings. It also demonstrated that the long-term mooring problem can be reduced to a compact set of governing conditions without losing the main design signal.</p>
+<p>For extremes, that signal is the East leg and its return-level curve. For fatigue, that signal is the concentration of annualized contribution into a very small number of sea states. This means a follow-on campaign does not need to treat every representative case as equally important. The report explicitly recommends a reduced-set interpretation in which the dominant sea state <span class="math inline">\((2.10,7.52)\)</span> is always included and one or two additional cases are added as needed to reach a target cumulative coverage threshold such as 80%.</p>
+<h2 id="closing-note" class="anchored">Closing note</h2>
+<p>This project connects mooring dynamics, statistical postprocessing, and device-scale simulation in a way that is directly useful for engineering decisions. It shows how to move from many weighted irregular sea states to a small set of governing load cases, and it frames mooring analysis as both an extreme-value problem and a fatigue-screening problem.</p>
+<p>Just as importantly for the broader research program, it also sits in continuity with experimental WEC work through the LUPA validation pathway. That connection helps place the mooring analysis within a larger, physically grounded workflow rather than as an isolated numerical exercise.</p>
+</section>
+
+
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+    tabsets.forEach(function(tabset) {
+      const tabby = new Tabby('#' + tabset.id);
+    });
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'light-border',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+
+
+
+
+<script src="../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

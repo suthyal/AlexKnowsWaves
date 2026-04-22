@@ -1,0 +1,56 @@
+---
+title: ""
+format:
+  html:
+    title-block: false
+---
+
+::: {.section-page}
+
+# Data Analysis
+
+This section highlights focused technical work in processing, modeling, statistics, and interpretation.
+
+<div class="project-list">
+
+<div class="project-item">
+<a class="project-link" href="data-analysis/beam-point-identification.qmd" aria-label="2.1 Automating Beam-Point Identification in Floating Wave Amplifier Experiments">
+<div class="project-number">2.1</div>
+<div class="project-text">
+<div class="project-title">Automating Beam-Point Identification in Floating Wave Amplifier Experiments</div>
+<div class="project-tags">
+<span class="project-tag">geometric classification</span>
+<span class="project-tag">experimental data processing</span>
+<span class="project-tag">time-series archive reduction</span>
+<span class="project-tag">algorithm design</span>
+<span class="project-tag">reproducible workflow development</span>
+<span class="project-tag">simulation-support data preparation</span>
+</div>
+</div>
+</a>
+</div>
+
+<div class="project-divider"></div>
+
+<div class="project-item">
+<a class="project-link" href="data-analysis/constructing-a-polynomial-surrogate-for-wec-array-power.qmd">
+<div class="project-number">2.2</div>
+<div class="project-text">
+<div class="project-title">Constructing a Polynomial Surrogate for WEC Array PTO Power</div>
+<div class="project-tags">
+<span class="project-tag">surrogate modeling</span>
+<span class="project-tag">regression analysis</span>
+<span class="project-tag">reduced-order modeling</span>
+<span class="project-tag">sensitivity analysis</span>
+<span class="project-tag">wave energy</span>
+<span class="project-tag">scientific computing</span>
+</div>
+</div>
+</a>
+</div>
+
+<div class="project-divider"></div>
+
+</div>
+
+:::

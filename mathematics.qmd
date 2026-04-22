@@ -1,0 +1,55 @@
+---
+title: ""
+format:
+  html:
+    title-block: false
+---
+
+::: {.section-page}
+
+# Mathematics
+
+This section includes expository mathematical writing, concepts, and links to longer technical work.
+
+<div class="project-list">
+
+<div class="project-item">
+<a class="project-link" href="mathematics/mathematical-bridges.qmd" aria-label="4.1 Mathematical Bridges: Complex Functions, Algebra, and Geometry">
+<div class="project-number">4.1</div>
+<div class="project-text">
+<div class="project-title">Mathematical Bridges: Complex Functions, Algebra, and Geometry</div>
+<div class="project-tags">
+<span class="project-tag">complex analysis</span>
+<span class="project-tag">Riemann sphere</span>
+<span class="project-tag">rational maps</span>
+<span class="project-tag">Möbius transformations</span>
+<span class="project-tag">expository writing</span>
+</div>
+</div>
+</a>
+</div>
+
+<div class="project-divider"></div>
+
+<div class="project-item">
+<a class="project-link" href="mathematics/eigenvectors-and-water-waves.qmd">
+<div class="project-number">4.2</div>
+<div class="project-text">
+<div class="project-title">Eigenvectors and Water Waves</div>
+<div class="project-tags">
+<span class="project-tag">linear algebra</span>
+<span class="project-tag">eigenvalues</span>
+<span class="project-tag">separation of variables</span>
+<span class="project-tag">water waves</span>
+<span class="project-tag">PDE intuition</span>
+<span class="project-tag">expository writing</span>
+</div>
+</div>
+</a>
+</div>
+
+<div class="project-divider"></div>
+
+</div>
+
+:::

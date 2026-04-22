@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.35">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>mathematical-bridges – Alex Sutherland</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<link href="../assets/icons/siteLogo.png" rel="icon" type="image/png">
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-html/tabby.min.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-html-640605f58ae58ee79329c070719e555b.min.css" rel="stylesheet" append-hash="true" data-mode="light">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-46f66b053e56abd73bb6e954d61a315b.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<style>html{ scroll-behavior: smooth; }</style>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../styles.scss">
+</head>
+
+<body>
+
+
+
+
+
+<section id="mathematical-bridges-complex-functions-algebra-and-geometry" class="project-page">
+<h1>4.1 Mathematical Bridges: Complex Functions, Algebra, and Geometry</h1>
+<h2 id="a-web-adaptation-of-an-expository-paper-on-the-riemann-sphere-rational-maps-and-möbius-transformations" class="anchored">A web adaptation of an expository paper on the Riemann sphere, rational maps, and Möbius transformations</h2>
+<div>
+<blockquote>
+<p><strong>Full paper</strong></p>
+<p>This page presents a condensed web version of the full expository paper.</p>
+<p><a href="../assets/pdfs/mathematical-bridges.pdf">Download the full paper</a></p>
+</blockquote>
+</div>
+<h2 id="overview" class="anchored">Overview</h2>
+<p>This exposition develops a single geometric idea and follows its algebraic consequences: once the complex plane is compactified by a point at infinity, it becomes the Riemann sphere. On that compact surface, meromorphic functions acquire a particularly rigid structure. The central result is that every meromorphic function on the sphere is rational, and the degree of that rational map controls how the sphere covers itself. In the special degree-one case, the resulting automorphisms are precisely the Möbius transformations <span class="citation" data-cites="jones1987complex saff2014fundamentals">(Jones and Singerman 1987; Saff and Snider 2014)</span>.</p>
+<p>The full paper was written as a bridge between three viewpoints that are often learned separately:</p>
+<ul>
+<li>complex functions as analytic objects</li>
+<li>rational maps as algebraic objects</li>
+<li>sphere automorphisms as geometric objects</li>
+</ul>
+<p>What makes the subject compelling is that these are not merely analogous descriptions. On the Riemann sphere, they are different descriptions of the same mathematical structure.</p>
+<h2 id="from-the-complex-plane-to-the-sphere" class="anchored">From the complex plane to the sphere</h2>
+<p>The first key step is to adjoin a point at infinity to the complex plane,</p>
+<p><span class="math display">\[
+\Sigma = \mathbb{C} \cup \{\infty\}.
+\]</span></p>
+<p>Geometrically, this compactification is realized by stereographic projection from the unit sphere</p>
+<p><span class="math display">\[
+S^2 = \{(x_1,x_2,x_3) \in \mathbb{R}^3 : x_1^2+x_2^2+x_3^2 = 1\}.
+\]</span></p>
+<p>If <span class="math inline">\(N=(0,0,1)\)</span> is the north pole and <span class="math inline">\(Q=(x_1,x_2,x_3) \in S^2 \setminus \{N\}\)</span> projects to the complex-plane point <span class="math inline">\(P=(x,y,0)\)</span>, then the stereographic map is</p>
+<p><span class="math display">\[
+x = \frac{x_1}{1-x_3},
+\qquad
+y = \frac{x_2}{1-x_3}.
+\]</span></p>
+<p>Its inverse is</p>
+<p><span class="math display">\[
+x_1 = \frac{2x}{x^2+y^2+1},
+\qquad
+x_2 = \frac{2y}{x^2+y^2+1},
+\qquad
+x_3 = \frac{x^2+y^2-1}{x^2+y^2+1}.
+\]</span></p>
+<p>These formulas do more than supply coordinates. They identify the extended complex plane with a compact geometric object, allowing analytic questions about complex functions to be studied on a sphere rather than on an unbounded plane.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img src="../assets/images/mathematical-bridges/StereographicProjection.jpg" class="img-fluid" style="width:42.0%" alt="Stereographic projection from the Riemann sphere to the complex plane"></p>
+<figcaption>Stereographic projection from the unit sphere to the complex plane.</figcaption>
+</figure>
+</div>
+<h2 id="why-compactification-changes-the-problem" class="anchored">Why compactification changes the problem</h2>
+<p>The point at infinity is not an afterthought. It changes the global behavior of complex functions.</p>
+<p>On the ordinary complex plane, a meromorphic function may have poles at finite points and still behave badly at infinity. On the sphere, infinity is just another point, so one can ask whether a function remains meromorphic there as well. This produces a much cleaner global theory.</p>
+<p>A useful auxiliary map is inversion,</p>
+<p><span class="math display">\[
+J(z)=\frac{1}{z},
+\qquad
+J(0)=\infty,
+\qquad
+J(\infty)=0,
+\]</span></p>
+<p>which exchanges <span class="math inline">\(0\)</span> and <span class="math inline">\(\infty\)</span>. It allows local behavior near infinity to be studied by converting it into local behavior near the origin. In that sense, the sphere treats all points on equal footing.</p>
+<h2 id="meromorphic-on-the-sphere-means-rational" class="anchored">Meromorphic on the sphere means rational</h2>
+<p>Once the sphere is the ambient space, a remarkable rigidity theorem appears:</p>
+<div>
+<blockquote>
+<p><strong>Central result</strong></p>
+<p>Every meromorphic function on the Riemann sphere is a rational function.</p>
+</blockquote>
+</div>
+<p>This is one of the main structural results of the paper. Intuitively, compactness eliminates the possibility of infinitely many uncontrolled singularities. A meromorphic function on <span class="math inline">\(\Sigma\)</span> can only have finitely many poles, and after factoring those poles out, the remaining function is holomorphic on the sphere. A holomorphic function on a compact Riemann surface of genus zero is extremely constrained, which forces the global form to be rational <span class="citation" data-cites="jones1987complex">(Jones and Singerman 1987)</span>.</p>
+<p>So if <span class="math inline">\(f\)</span> is meromorphic on <span class="math inline">\(\Sigma\)</span>, then</p>
+<p><span class="math display">\[
+f(z) = \frac{p(z)}{q(z)},
+\]</span></p>
+<p>for polynomials <span class="math inline">\(p\)</span> and <span class="math inline">\(q\)</span> with no common factor.</p>
+<p>This theorem is the hinge point of the exposition. It turns the study of analytic maps on the sphere into the study of algebraic maps, and from there geometric interpretations become available.</p>
+<h2 id="degree-and-branched-covering-behavior" class="anchored">Degree and branched covering behavior</h2>
+<p>If</p>
+<p><span class="math display">\[
+f(z)=\frac{p(z)}{q(z)}
+\]</span></p>
+<p>is written in lowest terms, its degree is</p>
+<p><span class="math display">\[
+\deg(f)=\max\{\deg p,\deg q\}.
+\]</span></p>
+<p>That degree has direct geometric meaning. A rational map of degree <span class="math inline">\(k\)</span> acts as a <span class="math inline">\(k\)</span>-fold branched covering of the sphere: away from finitely many branch values, a typical point has exactly <span class="math inline">\(k\)</span> preimages counted with multiplicity.</p>
+<p>The simplest nontrivial example is</p>
+<p><span class="math display">\[
+f(z)=z^2.
+\]</span></p>
+<p>Viewed as a map <span class="math inline">\(\Sigma \to \Sigma\)</span>, it is generically two-to-one. The exceptional behavior occurs at the branch points <span class="math inline">\(0\)</span> and <span class="math inline">\(\infty\)</span>, where the local multiplicity changes. This gives a concrete model for how analytic multiplicity becomes topological covering behavior.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img src="../assets/images/mathematical-bridges/CoveringSpace.jpg" class="img-fluid" style="width:78.0%" alt="Branched covering of the sphere induced by z squared"></p>
+<figcaption>The rational map <span class="math inline">\(z \mapsto z^2\)</span> as a branched self-covering of the sphere, with a zero of order 2 at <span class="math inline">\(0\)</span> and a pole of order 2 at <span class="math inline">\(\infty\)</span>.</figcaption>
+</figure>
+</div>
+<h2 id="the-degree-one-case-möbius-transformations" class="anchored">The degree-one case: Möbius transformations</h2>
+<p>The degree-one rational maps are exactly the Möbius transformations,</p>
+<p><span class="math display">\[
+T(z)=\frac{az+b}{cz+d},
+\qquad a,b,c,d \in \mathbb{C},
+\qquad ad-bc \neq 0.
+\]</span></p>
+<p>These are the automorphisms of the Riemann sphere. They are precisely the meromorphic bijections <span class="math inline">\(\Sigma \to \Sigma\)</span>, so the geometry of the sphere and the algebra of <span class="math inline">\(2\times 2\)</span> complex matrices become tightly linked.</p>
+<p>Several familiar operations appear as special cases:</p>
+<ul>
+<li>rotations: <span class="math inline">\(R_\theta(z)=e^{i\theta}z\)</span></li>
+<li>dilations: <span class="math inline">\(S_r(z)=rz\)</span></li>
+<li>translations: <span class="math inline">\(T_t(z)=z+t\)</span></li>
+<li>inversion: <span class="math inline">\(J(z)=1/z\)</span></li>
+</ul>
+<p>One of the key takeaways of the paper is that these basic operations generate the full Möbius group. In other words, the entire automorphism group of the sphere can be built from a small collection of geometrically meaningful maps.</p>
+<h2 id="group-structure-and-projective-linear-algebra" class="anchored">Group structure and projective linear algebra</h2>
+<p>A Möbius transformation can be represented by the matrix</p>
+<p><span class="math display">\[
+M =
+\begin{pmatrix}
+a &amp; b \\
+c &amp; d
+\end{pmatrix},
+\]</span></p>
+<p>with nonzero determinant. Composition of transformations corresponds to matrix multiplication, up to multiplication by a nonzero scalar. This leads to the identification</p>
+<p><span class="math display">\[
+\operatorname{Aut}(\Sigma) \cong PGL(2,\mathbb{C}),
+\]</span></p>
+<p>where <span class="math inline">\(PGL(2,\mathbb{C})\)</span> is the projective general linear group.</p>
+<p>This is the clearest point at which the three themes of the paper meet:</p>
+<ul>
+<li>analytically, these maps are meromorphic bijections</li>
+<li>algebraically, they are projective linear transformations</li>
+<li>geometrically, they are the symmetries of the Riemann sphere preserving generalized circles</li>
+</ul>
+<p>That last point is especially important. Möbius transformations send circles and lines in the extended plane to circles and lines again, where lines are interpreted as circles through infinity. This is one of the reasons they appear so naturally across complex analysis, geometry, and dynamical systems.</p>
+<h2 id="why-this-makes-a-good-expository-subject" class="anchored">Why this makes a good expository subject</h2>
+<p>This paper was designed to emphasize mathematical continuity rather than isolated results. A student may first encounter analytic functions in a complex analysis course, matrices in linear algebra, and projective geometry in the context of physics. The Riemann sphere shows that these ideas have deep and important connections.</p>
+<p>The overall progression is</p>
+<p><span class="math display">\[
+\text{compactification}
+\;\longrightarrow\;
+\text{meromorphic functions}
+\;\longrightarrow\;
+\text{rational maps}
+\;\longrightarrow\;
+\text{Möbius transformations and } PGL(2,\mathbb{C}).
+\]</span></p>
+<h2 id="selected-references" class="anchored">Selected references</h2>
+<p>The full paper contains a more complete bibliography. The sources that most directly shaped this exposition are Jones and Singerman (1987) for the algebraic-geometric viewpoint, Saff and Snider (2014) for background complex analysis, Needham (2023) for visual intuition, and Bottazzini (1986) for historical context.</p>
+<ul>
+<li>Bottazzini, Umberto. <em>The Higher Calculus: A History of Real and Complex Analysis from Euler to Weierstrass</em>. Springer-Verlag, 1986.</li>
+<li>Jones, Gareth A., and David Singerman. <em>Complex Functions: An Algebraic and Geometric Viewpoint</em>. Cambridge University Press, 1987.</li>
+<li>Needham, Tristan. <em>Visual Complex Analysis</em>. 25th Anniversary ed.&nbsp;Oxford University Press, 2023.</li>
+<li>Saff, Edward B., and Arthur David Snider. <em>Fundamentals of Complex Analysis with Applications to Engineering, Science, and Mathematics</em>. 3rd ed.&nbsp;Pearson, 2014.</li>
+</ul>
+<div>
+<blockquote>
+<p><strong>Website note</strong></p>
+<p>This page is intentionally shorter than the full manuscript. For the full story, including detailed proofs of all theorems please download the PDF.</p>
+</blockquote>
+</div>
+</section>
+
+
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+    tabsets.forEach(function(tabset) {
+      const tabby = new Tabby('#' + tabset.id);
+    });
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'light-border',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+
+
+
+
+<script src="../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

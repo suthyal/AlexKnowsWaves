@@ -1,0 +1,98 @@
+---
+title: ""
+format: html
+page-layout: full
+---
+
+<div class="topbar">
+<div class="topbar-inner">
+<a class="brand" href="index.html" aria-label="Home">
+<img class="brand-logo" src="assets/icons/siteLogo.png" alt="Wave logo">
+<span class="brand-text">Alex Sutherland</span>
+</a>
+<div class="topbar-right">
+<a class="menu-button" href="#section-start" aria-label="Jump to sections">
+<span></span>
+<span></span>
+<span></span>
+</a>
+</div>
+</div>
+</div>
+<div class="hero-block">
+<div class="hero-inner hero-inner-visual">
+<div class="hero-copy hero-copy-wide">
+<h1 class="hero-title">Science, mathematics, and technical tools for understanding complex systems.</h1>
+</div>
+
+<div class="hero-visual" aria-hidden="true">
+<canvas id="hero-waves-canvas"></canvas>
+</div>
+</div>
+</div>
+
+<script src="assets/js/hero-vortex.js"></script>
+
+<div id="section-start" class="section-list">
+
+<a class="section-link" href="research.html">
+<div class="section-number">01</div>
+<div class="section-text">
+<div class="section-title">Research</div>
+<div class="section-description">
+Broad context, major questions, and the larger scientific themes tying the work together.
+</div>
+</div>
+<div class="section-arrow">↓</div>
+</a>
+<div class="section-divider"></div>
+
+<a class="section-link" href="data-analysis.html">
+<div class="section-number">02</div>
+<div class="section-text">
+<div class="section-title">Data Analysis</div>
+<div class="section-description">
+Focused technical highlights in processing, modeling, statistics, and interpretation.
+</div>
+</div>
+<div class="section-arrow">↓</div>
+</a>
+<div class="section-divider"></div>
+
+<a class="section-link" href="physics-based-simulation.html">
+<div class="section-number">03</div>
+<div class="section-text">
+<div class="section-title">Physics-Based Simulation</div>
+<div class="section-description">
+Numerical workflows, simulation methods, and validation work.
+</div>
+</div>
+<div class="section-arrow">↓</div>
+</a>
+<div class="section-divider"></div>
+
+<a class="section-link" href="mathematics.html">
+<div class="section-number">04</div>
+<div class="section-text">
+<div class="section-title">Mathematics</div>
+<div class="section-description">
+Expository mathematical writing, concepts, and links to longer technical work.
+</div>
+</div>
+<div class="section-arrow">↓</div>
+</a>
+<div class="section-divider"></div>
+
+<a class="section-link" href="about.html">
+<div class="section-number">05</div>
+<div class="section-text">
+<div class="section-title">About</div>
+<div class="section-description">
+Background, links, and CV.
+</div>
+</div>
+<div class="section-arrow">↓</div>
+</a>
+<div class="section-divider"></div>
+
+</div>

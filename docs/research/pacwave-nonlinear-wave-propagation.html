@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.35">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>pacwave-nonlinear-wave-propagation – Alex Sutherland</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<link href="../assets/icons/siteLogo.png" rel="icon" type="image/png">
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-html/tabby.min.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-html-640605f58ae58ee79329c070719e555b.min.css" rel="stylesheet" append-hash="true" data-mode="light">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-46f66b053e56abd73bb6e954d61a315b.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<style>html{ scroll-behavior: smooth; }</style>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../styles.scss">
+</head>
+
+<body>
+
+
+
+
+
+<section id="nonlinear-wave-propagation-and-structural-response-analysis-for-pacwave-south" class="project-page">
+<h1>1.1 Nonlinear Wave Propagation and Structural Response Analysis for PacWave South</h1>
+<div>
+<blockquote>
+<p><strong>Full report</strong></p>
+<p>This page is adapted from the full Task 4 research report, available <a href="../assets/pdfs/pacwave-task4-report.pdf">here</a>.</p>
+</blockquote>
+</div>
+<h2 id="overview" class="anchored">Overview</h2>
+<p>This project examined how nonlinear wave propagation changes the statistical character of ocean-wave forcing and how those changes carry through into wave energy converter response. The motivating question was practical: if a device is simulated with a standard linear wave model, what behavior is missed when the true sea state contains stronger non-Gaussian structure?</p>
+<p>The report addressed that question in three stages. First, it characterized the PacWave South site and compared available wave datasets. Second, it selected an appropriate nonlinear propagation model for PacWave-like conditions. Third, it propagated measured wave time series under both linear and nonlinear models, used those wave fields as forcing in WEC-Sim, and compared the resulting device response.</p>
+<p>The main conclusion was not that nonlinear modeling dramatically changes mean absorbed power. Instead, the report showed something more targeted and more important for design: nonlinear propagation preserves elevated kurtosis and makes extreme wave events more common, and those changes are reflected in the WEC response as well.</p>
+<!-- Full report Figure 1: PacWave South Testing Site -->
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img src="../assets/images/pacwave-nonlinear-wave-propagation/PacWaveSouthTestingSite.jpg" class="img-fluid"></p>
+<figcaption>PacWave South testing site and berth region.</figcaption>
+</figure>
+</div>
+<h2 id="why-this-problem-matters" class="anchored">Why this problem matters</h2>
+<p>For wave energy systems, average behavior is only part of the design problem. Mooring loads, structural excursions, and survivability are strongly influenced by rare events and heavy-tailed response statistics. A model that reproduces the mean response while underrepresenting extremes can still be inadequate for engineering decisions.</p>
+<p>That is why the report focused on skewness, kurtosis, and extreme-event probability rather than only on mean quantities. The project’s core argument was that nonlinearity matters not because it necessarily changes the average sea state, but because it changes the distribution of events around that average.</p>
+<h2 id="site-characterization-and-data-selection" class="anchored">Site characterization and data selection</h2>
+<p>The work began with PacWave South, a grid-connected open-ocean test site offshore of Newport, Oregon. The report then compared three wave-data sources:</p>
+<ul>
+<li>PacWave Spotter buoy data</li>
+<li>regional hindcast data</li>
+<li>Ekofisk North Sea laser-altimeter time series</li>
+</ul>
+<p>The key distinction was that the Spotter and hindcast products primarily provided wave statistics or spectra, while the North Sea record provided raw measured time series. Because the project needed model-independent time histories that could be propagated under both linear and nonlinear assumptions, the North Sea dataset was selected as the most useful forcing source.</p>
+<p>A major part of the study was therefore not just simulation, but choosing a forcing dataset that preserved the information needed to test nonlinear evolution properly.</p>
+<!-- Full report Figure 11: Contour Plot of Hs and Tp for the Ekofisk North Sea data for 2002–2020 -->
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img src="../assets/images/pacwave-nonlinear-wave-propagation/NorthSea_Hs_Tp_Contour.svg" class="img-fluid"></p>
+<figcaption>Example contour view of sea-state coverage in the North Sea dataset.</figcaption>
+</figure>
+</div>
+<h2 id="why-a-nonlinear-model-was-needed" class="anchored">Why a nonlinear model was needed</h2>
+<p>A central point of the report is that spectra and bulk statistics already carry modeling assumptions. In particular, standard linear random-wave analysis assumes that the free surface can be represented as a superposition of sinusoids,</p>
+<p><span class="math display">\[
+\eta(t) = \sum_{i=1}^{\infty} a_i \sin(\omega_i t + \phi_i).
+\]</span></p>
+<p>That assumption is useful, but it also fixes the statistical structure of the wave field. Under the linear framework, amplitude statistics are taken to be Gaussian, and wave-height statistics become Rayleigh-distributed. The report used this as the baseline against which nonlinear behavior was compared.</p>
+<p>From there, the project considered two nonlinear models:</p>
+<ul>
+<li>the Korteweg–de Vries equation for shallow-water behavior</li>
+<li>the nonlinear Schrödinger equation for deep to intermediate water</li>
+</ul>
+<p>The final model choice was based on PacWave-like wave conditions, bandwidth, and depth regime. The report concluded that the nonlinear Schrödinger equation was the better choice because PacWave South conditions lie mainly in the deep-to-intermediate range and are approximately narrow-banded.</p>
+<p>The NLS envelope equation was written in the report as</p>
+<p><span class="math display">\[
+i(\psi_t + C_g \psi_x) + \mu \psi_{xx} + \nu |\psi|^2 \psi = 0.
+\]</span></p>
+<p>Here, <span class="math inline">\(\psi\)</span> is the wave envelope, <span class="math inline">\(C_g\)</span> is the group velocity, and the nonlinear term <span class="math inline">\(|\psi|^2 \psi\)</span> allows the model to preserve effects that are absent in a purely linear propagator.</p>
+<h2 id="simulation-workflow" class="anchored">Simulation workflow</h2>
+<p>Once the data source and wave model were selected, the workflow moved from site characterization to device simulation.</p>
+<p>The North Sea records were first segmented into approximately 54-minute windows. That duration was chosen to preserve enough waves to estimate skewness and kurtosis reliably while also matching a power-of-two record length for FFT-based processing. Each time series was then propagated at a sequence of distances using both linear and nonlinear evolution models.</p>
+<p>Those propagated wave records were used as forcing functions in WEC-Sim for a LUPA point absorber, with analysis focused on float heave response. The device model also included a peak-period-based PTO damping scheme, so the workflow connected wave statistics, device dynamics, and absorbed power within one simulation chain.</p>
+<!-- Full report Figure 18: Data qualification and simulation process -->
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img src="../assets/images/pacwave-nonlinear-wave-propagation/SimulationWorkflow.png" class="img-fluid"></p>
+<figcaption>Data qualification and simulation workflow.</figcaption>
+</figure>
+</div>
+<h2 id="statistical-metrics-used-in-the-comparison" class="anchored">Statistical metrics used in the comparison</h2>
+<p>The report used skewness and kurtosis as the main low-order indicators of non-Gaussian behavior. Skewness was used to measure asymmetry in the free-surface distribution, while kurtosis measured tail heaviness and concentration around the mean.</p>
+<p>The skewness was defined as</p>
+<p><span class="math display">\[
+s
+=
+\frac{\mathbb{E}[(\eta-\mu)^3]}{\sigma^3},
+\]</span></p>
+<p>and the kurtosis as</p>
+<p><span class="math display">\[
+\kappa
+=
+\frac{\mathbb{E}[(\eta-\mu)^4]}{\sigma^4}.
+\]</span></p>
+<p>For a Gaussian process, the skewness is zero and the kurtosis is three. In practice, the report emphasized that elevated kurtosis is especially important because it indicates a greater likelihood of large-magnitude events.</p>
+<p>The project then fit Pearson distributions to the measured moments in order to estimate excess tail area. This gave a more direct way to compare how much more likely extremes became once nonlinear propagation was retained.</p>
+<h2 id="what-changed-under-nonlinear-propagation" class="anchored">What changed under nonlinear propagation</h2>
+<p>One of the clearest results in the report is that linear propagation rapidly drives the wave statistics back toward the Gaussian baseline, while nonlinear propagation preserves elevated kurtosis over distance.</p>
+<p>That result appeared first in the wave input itself. When representative time series were propagated under linear theory, their skewness and kurtosis moved quickly toward the linear-theory reference point on the skewness–kurtosis plots. Under NLS propagation, the skewness still diminished, but the larger kurtosis values were better preserved.</p>
+<p>The same pattern then appeared in the WEC response. WEC-Sim includes some nonlinearity internally, so even linear input can generate mildly nonlinear response statistics. But when the forcing came from nonlinearly propagated waves, the heave motion retained systematically larger kurtosis and therefore a greater prevalence of extremes.</p>
+<!-- Full report Figure 24: Contour plots of skewness and kurtosis for 5000m of wave propagation -->
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img src="../assets/images/pacwave-nonlinear-wave-propagation/SkewnessKurtosis.svg" class="img-fluid"></p>
+<figcaption>Representative skewness–kurtosis result for propagated cases.</figcaption>
+</figure>
+</div>
+<h2 id="why-the-equations-of-motion-still-matter" class="anchored">Why the equations of motion still matter</h2>
+<p>The report did not present this as a purely wave-statistics problem. The point was to understand how wave-model choice affects actual device behavior in WEC-Sim.</p>
+<p>The governing equation of motion used in the report was</p>
+<p><span class="math display">\[
+M \ddot{X}
+=
+\vec{F}_{\mathrm{exc}}(t)
++
+\vec{F}_{\mathrm{rad}}(t)
++
+\vec{F}_{\mathrm{pto}}(t)
++
+\vec{F}_{v}
++
+\vec{F}_{me}(t)
++
+\vec{F}_{B}(t)
++
+\vec{F}_{m}(t).
+\]</span></p>
+<p>This matters because the device response is not just a filtered copy of the wave elevation. It is shaped by excitation, radiation, PTO behavior, buoyancy, viscous effects, Morison-type forcing, and mooring response.</p>
+<p>For the PTO model, the report also used the instantaneous absorbed-power relation</p>
+<p><span class="math display">\[
+P_{\mathrm{pto}} = -F_{\mathrm{pto}} X_{\mathrm{rel}}.
+\]</span></p>
+<p>This helps explain why the project looked separately at mean power capture and tail behavior. Mean absorbed power is dominated by the typical motion range, while structural and survivability concerns are more sensitive to the upper tail of the response.</p>
+<h2 id="power-versus-extremes" class="anchored">Power versus extremes</h2>
+<p>A particularly useful outcome of the project is that it separates two engineering questions that are often blurred together.</p>
+<p>The first is whether nonlinear forcing substantially changes average power capture.</p>
+<p>The second is whether nonlinear forcing changes the probability of large motions and extreme events.</p>
+<p>The report’s answer was that average power capture under the peak-period PTO scheme remained broadly similar between linear and nonlinear forcing, while the extreme-event statistics changed more meaningfully. That is the central design implication: nonlinearity may not dominate the mean, but it matters in the tails.</p>
+<!-- Full report Figure 26: Instantaneous WEC power output using a peak period control scheme -->
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img src="../assets/images/pacwave-nonlinear-wave-propagation/PowerOutputs.png" class="img-fluid"></p>
+<figcaption>Instantaneous WEC power output for linear and nonlinear forcing.</figcaption>
+</figure>
+</div>
+<h2 id="design-implication" class="anchored">Design implication</h2>
+<p>The report closed by proposing a practical simplified procedure for incorporating nonlinear analysis into WEC design studies.</p>
+<p>The recommendation was not that every case requires a full nonlinear treatment from the start. Instead, the suggested workflow was:</p>
+<ol type="1">
+<li>characterize whether the site is in the depth and bandwidth range where NLS-type modeling is appropriate</li>
+<li>work with time series directly when possible</li>
+<li>ensure that the analyzed test set includes sufficiently high-kurtosis cases</li>
+<li>evaluate dynamics with those higher-kurtosis inputs included in the design envelope</li>
+</ol>
+<p>That recommendation follows directly from the project’s main result: the most important difference between linear and nonlinear forcing showed up in the prevalence of extremes, not just in the average response.</p>
+<h2 id="role-in-the-broader-research-program" class="anchored">Role in the broader research program</h2>
+<p>This report sits at the intersection of ocean-wave statistics, nonlinear propagation, and WEC dynamics. It connects site characterization to model selection, then links wave-model choice directly to simulated device response.</p>
+<p>More broadly, the project argues for a shift in emphasis. If a wave-energy study is concerned only with average absorbed power, a linear model may appear sufficient. But if the study is concerned with extreme response, mooring loads, survivability, or heavy-tailed motion statistics, then the nonlinear structure of the forcing becomes much more important.</p>
+<p>That is the main contribution of this work: it shows, with a concrete simulation workflow, that preserving nonlinear wave statistics changes what kinds of events a device is likely to experience, even when the mean energy picture looks almost unchanged.</p>
+</section>
+
+
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+    tabsets.forEach(function(tabset) {
+      const tabby = new Tabby('#' + tabset.id);
+    });
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'light-border',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+
+
+
+
+<script src="../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>
