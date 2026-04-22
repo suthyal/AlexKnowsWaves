@@ -4,6 +4,7 @@ project:
 
 website:
   title: "Alex Sutherland"
+  site-url: "https://suthyal.github.io/alex-sutherland-site/"
   favicon: assets/icons/siteLogo.png
   navbar:
     left:
